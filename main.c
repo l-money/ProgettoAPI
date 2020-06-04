@@ -9,6 +9,7 @@ char **testo;
 /*Ricordati sta roba per non intasare la memoria*/
 void svuota_pila() {}
 
+/*Stampa lo stato del file di testo*/
 void print(int from, int to) {
     from--;
     to--;
@@ -21,6 +22,8 @@ void print(int from, int to) {
     }
 }
 
+/*Ad una modifica o cancellazione salva lo stato delle righe
+ * intaccate all'interno dell'apposita struttura dati per l'undo*/
 void save_backup(char** bkp, char cmd, int from, int to){
     printf("Salvataggio:\n");
     printf("operazione:\t");
@@ -38,12 +41,17 @@ void save_backup(char** bkp, char cmd, int from, int to){
     }
 }
 
+/*Data la riga vuota (empty) shifta tutte le righe
+ * successive in alto di 1 posizione per coprirla*/
 void compress(int empty) {
     for (int i = empty; i < current_size; i++) {
         testo[i] = testo[i + 1];
     }
 }
 
+/*Cancella le righe specificate come args e chiama
+ * - compress per compattare i "buchi"
+ * - save_backup per salvare lo stato prima della cancellazione*/
 void delete(int from, int to) {
     printf("%d > %d\n", from, current_size);
     if (from > current_size) {
@@ -68,8 +76,11 @@ void delete(int from, int to) {
     save_backup(bkp, 'd', from, to);
 }
 
+/*Sostituisce il testo esistente in una riga con quello richiesto all'utente
+ * se la riga non esiste ne crea una nuova
+ * se la riga esiste chiama save_backup per salvare il vecchio stato
+ * salva anche se la riga vecchia era vuota e la etichetta NULL*/
 void change(int from, int to) {
-    bool overwrite = false;
     if (to > current_size) {
         testo = realloc(testo, to * sizeof(char *));
         current_size = to;
@@ -91,18 +102,19 @@ void change(int from, int to) {
             }else{
                 bkp[j] = malloc(1024 * sizeof(char));
                 strcpy(bkp[j], testo[i]);
-                overwrite = true;
-            }
+           }
             strcpy(testo[i], c);
         }
     }
-    if(overwrite){
-        save_backup(bkp, 'c', from, to);
-    }else{
-        free(bkp);
-    }
+    save_backup(bkp, 'c', from, to);
+
 }
 
+/*Interpreta i comandi dell'utente
+ * nei formati
+ * - 5c
+ * - 2,5d
+ * e chiama le opportune funzioni*/
 bool interpreta(char *input) {
     int length = (int) strlen(input);
     char cmd;
