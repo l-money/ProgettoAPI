@@ -83,6 +83,7 @@ char **dump_backup(int from, int to) {
     int j = 0;
     for (int i = from; i < to; i++) {
         if (bkp[j] == NULL) {
+//            bkp[j] = malloc(strlen(testo[i]) * sizeof(char));
             bkp[j] = malloc(1024 * sizeof(char));
         }
         strcpy(bkp[j], testo[i]);
@@ -120,6 +121,7 @@ void shifta(int from, int new_size, int old_size) {
     new_size--;
     for (int i = 0; old_size - i >= from; i++) {
         if (testo[new_size - i] == NULL) {
+//            testo[new_size - i] = malloc(strlen(testo[old_size - i]) * sizeof(char));
             testo[new_size - i] = malloc(1024 * sizeof(char));
         }
         strcpy(testo[new_size - i], testo[old_size - i]);
@@ -243,7 +245,7 @@ void change(int from, int to, bool manual, char **autoins) {
     char **bkp;
     from--;
     if (to > current_size) {
-        //bkp = dump_backup(from, current_size);@
+        bkp = dump_backup(from, current_size);
         int k = current_size;
         testo = realloc(testo, to * sizeof(char *));
         current_size = to;
@@ -251,7 +253,7 @@ void change(int from, int to, bool manual, char **autoins) {
             testo[k] = NULL;
         }
     } else {
-        //bkp = dump_backup(from, to);@
+        bkp = dump_backup(from, to);
     }
     if (manual) {
         //char f[10];
@@ -272,6 +274,7 @@ void change(int from, int to, bool manual, char **autoins) {
         } else {
             if (testo[i] == NULL) {
                 testo[i] = malloc(1024 * sizeof(char));
+//                testo[i] = malloc(strlen(c) * sizeof(char));
             }
             strcpy(testo[i], c);
         }
