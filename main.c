@@ -279,7 +279,7 @@ void change(int from, int to, bool manual, char **autoins) {
             strcpy(testo[i], c);
         }
     }
-    //save_backup_undo(bkp, 'c', from, to);@
+    save_backup_undo(bkp, 'c', from, to);
 
 }
 
