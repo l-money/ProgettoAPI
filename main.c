@@ -21,10 +21,10 @@ stack *redo_stack = NULL;
 char *token = NULL, input[20];
 
 void free_stack(stack *s) {
-    for (int i = 0; i < s->to - s->from; i++) {
+    /*for (int i = 0; i < s->to - s->from; i++) {
         free(s->bkp[i]);
     }
-    free(s->bkp);
+    free(s->bkp);*/
     free(s);
 }
 
@@ -35,7 +35,10 @@ void empty_redo_stack() {
         while (s->prew != NULL) {
             s = s->prew;
         }
-        free_stack(s);
+        for (int i = 0; i < s->to - s->from; i++) {
+            free(s->bkp[i]);
+        }
+        free(s->bkp);
     }
     redo_size = 0;
 }
@@ -64,7 +67,7 @@ void print(int from, int to) {
     from--;
     to--;
     for (int i = from; i <= to; i++) {
-        if (i >= current_size || i < 0) {
+        if (i >= current_size || i < 0 || testo[i] == NULL) {
             printf(".\n");
         } else {
             printf("%s", testo[i]);
@@ -81,12 +84,8 @@ char **dump_backup(int from, int to) {
     bkp = malloc((to - from) * sizeof(char *));
     //printf("from: %d\tTo: %d\n", from, to);
     int j = 0;
-    for (int i = from; i < to; i++) {
-        if (bkp[j] == NULL) {
-//            bkp[j] = malloc(strlen(testo[i]) * sizeof(char));
-            bkp[j] = malloc(1024 * sizeof(char));
-        }
-        strcpy(bkp[j], testo[i]);
+    for (int i = from; i < to && i < current_size; i++) {
+        bkp[j] = testo[i];
         j++;
     }
     return bkp;
@@ -120,9 +119,12 @@ void shifta(int from, int new_size, int old_size) {
     old_size--;
     new_size--;
     for (int i = 0; old_size - i >= from; i++) {
+        int length = strlen(testo[old_size - i]) + 1;
         if (testo[new_size - i] == NULL) {
-//            testo[new_size - i] = malloc(strlen(testo[old_size - i]) * sizeof(char));
-            testo[new_size - i] = malloc(1024 * sizeof(char));
+            testo[new_size - i] = malloc(length * sizeof(char));
+//            testo[new_size - i] = malloc(1024 * sizeof(char));
+        } else {
+            testo[new_size - i] = realloc(testo[new_size - i], length * sizeof(char));
         }
         strcpy(testo[new_size - i], testo[old_size - i]);
     }
@@ -149,10 +151,10 @@ void restore_backup(stack *stato) {
         /*Se non va fare strcpy*/
         if (stato->bkp[j] == NULL) {
             vuote++;
-            free(testo[i]);
+            testo[i] = NULL;
         } else {
             //printf("%s\t<-%s\n", testo[i], stato->bkp[j]);
-            strcpy(testo[i], stato->bkp[j]);
+            testo[i] = stato->bkp[j];
         }
         j++;
     }
@@ -221,7 +223,6 @@ void delete(int from, int to) {
         //printf("riga: %d\tbkp: %d\n", i, j);
         /*bkp[j] = malloc(1024 * sizeof(char));
         strcpy(bkp[j], testo[from]);*/
-        free(testo[from]);
         compress(from);
         testo[current_size - 1] = NULL; //FREE?
         current_size--;
@@ -245,6 +246,7 @@ void change(int from, int to, bool manual, char **autoins) {
     char **bkp;
     from--;
     if (to > current_size) {
+        /*RESTORE*/
         bkp = dump_backup(from, current_size);
         int k = current_size;
         testo = realloc(testo, to * sizeof(char *));
@@ -253,6 +255,7 @@ void change(int from, int to, bool manual, char **autoins) {
             testo[k] = NULL;
         }
     } else {
+        /*RESTORE*/
         bkp = dump_backup(from, to);
     }
     if (manual) {
@@ -267,18 +270,18 @@ void change(int from, int to, bool manual, char **autoins) {
         if (manual) {
             fgets(c, 1024, stdin);
         } else {
-            strcpy(c, autoins[j]);
+            testo[i] = autoins[j];
+            continue;
         }
         if (strcmp(c, ".\0") == 0 || i == to) {
             break;
         } else {
-            if (testo[i] == NULL) {
-                testo[i] = malloc(1024 * sizeof(char));
-//                testo[i] = malloc(strlen(c) * sizeof(char));
-            }
+            int length = strlen(c) + 1;
+            testo[i] = malloc(length * sizeof(char));
             strcpy(testo[i], c);
         }
     }
+    /*RESTORE*/
     save_backup_undo(bkp, 'c', from, to);
 
 }
@@ -286,7 +289,8 @@ void change(int from, int to, bool manual, char **autoins) {
 void redo(int steps) {
     stack *s = redo_stack;
     stack *s2;
-    for (int i = 0; s != NULL && i < steps; i++) {
+    for (int i = 0; s != NULL && i < steps && i < redo_size; i++) {
+
         char **bkp = dump_backup(s->from, s->to);
         /*Maybe se event è delete nella redo non è necessario salvare lo stato successivo
          * Anche perchè non esiste, per ora occupo memoria senza usarla per semplicità*/
