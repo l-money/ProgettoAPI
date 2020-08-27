@@ -231,8 +231,8 @@ void delete(int from, int to, bool manual) {
 
     char **bkp;
     if (from > current_size && manual) {
-        bkp = dump_backup(from, to);
-        save_backup_undo(bkp, 'd', from, to);
+        bkp = dump_backup(from - 1, to);
+        save_backup_undo(bkp, 'd', from - 1, to);
         return;
     }
     from--;
