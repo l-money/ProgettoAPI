@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+/*Provo a committare*/
 /*Non c'è la riga 0*/
 typedef struct stack {
     int from;
