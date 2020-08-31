@@ -276,7 +276,7 @@ void change(int from, int to, bool manual, char **autoins) {
         oldsize = current_size;
         /*RESTORE*/
         if (manual)
-            bkp = dump_backup(from, current_size);
+            bkp = dump_backup(from, to); /*WARN current_size*/
         int k = current_size;
         testo = realloc(testo, to * sizeof(char *));
         current_size = to;
@@ -325,7 +325,7 @@ void change(int from, int to, bool manual, char **autoins) {
 void redo(int steps) {
     stack *s = redo_stack;
     stack *s2;
-    for (int i = 0; s != NULL && i < steps && i < redo_size; i++) {
+    for (int i = 0; s != NULL && i < steps && redo_size > 0; i++) {
 
         char **bkp = dump_backup(s->from, s->to);
         /*Maybe se event è delete nella redo non è necessario salvare lo stato successivo
