@@ -19,6 +19,7 @@ int redo_size = 0;
 stack *undo_stack = NULL;
 stack *redo_stack = NULL;
 char *token = NULL, input[20];
+bool firstalloc = false;
 
 void free_stack(stack *s) {
     /*for (int i = 0; i < s->to - s->from; i++) {
@@ -149,25 +150,35 @@ void shifta(int from, int new_size, int old_size) {
 void restore_backup(stack *stato) {
     int old_size = current_size;
     //printf("to: %d\tsize: %d\n", stato->to, current_size);
+    bool continua = true;
     if (stato->to > current_size) {
 
         if (stato->event == 'd') {
             current_size = stato->to + old_size - stato->from;
-            testo = realloc(testo, current_size * sizeof(char *));
+            if(testo = realloc(testo, current_size * sizeof(char *))==NULL){
+                continua = false;
+                current_size = old_size;
+            }
             shifta(stato->from, current_size, old_size);
         }else{
-            testo = realloc(testo, stato->to * sizeof(char *));
+            if(testo = realloc(testo, stato->to * sizeof(char *))==NULL){
+                continua = false;
+                current_size = old_size;
+            }
             current_size = stato->to;
         }
         //printf("old size: %d\tNew size: %d\n", old_size, current_size);
     } else if (stato->event == 'd') {
         current_size += stato->to - stato->from;
-        testo = realloc(testo, current_size * sizeof(char *));
+        if(testo = realloc(testo, current_size * sizeof(char *))==NULL){
+            continua = false;
+            current_size = old_size;
+        }
         shifta(stato->from, current_size, old_size);
     }
     int j = 0;
     int vuote = 0;
-    for (int i = stato->from; i < stato->to; i++) {
+    for (int i = stato->from; i < stato->to && firstalloc; i++) {
         /*Se non va fare strcpy*/
         if (stato->bkp[j] == NULL) {
             vuote++;
@@ -181,7 +192,12 @@ void restore_backup(stack *stato) {
     current_size -= vuote;
     free_stack(stato);
     undo_size--;
-    testo = realloc(testo, current_size * sizeof(char *));
+    if(testo = realloc(testo, current_size * sizeof(char *))==NULL){
+        current_size = old_size;
+    }
+    if(!firstalloc){
+        current_size = 0;
+    }
 }
 
 /*Quando viene chiamato undo salva lo stato delle righe intaccate
@@ -320,6 +336,7 @@ void change(int from, int to, bool manual, char **autoins) {
         } else {
             int length = strlen(c) + 1;
             testo[i] = malloc(length * sizeof(char));
+            firstalloc = true;
             strcpy(testo[i], c);
         }
     }
