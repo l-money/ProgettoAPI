@@ -7,7 +7,8 @@
 typedef struct stack {
     int from;
     int to;
-    char event;//ciao
+    int content_length; //provo sta cosa
+    char event;
     char **bkp;
     struct stack *prew;
 } stack;
@@ -19,7 +20,7 @@ int redo_size = 0;
 stack *undo_stack = NULL;
 stack *redo_stack = NULL;
 char *token = NULL, input[20];
-bool firstalloc = false;
+char c[1024];
 
 void free_stack(stack *s) {
     /*for (int i = 0; i < s->to - s->from; i++) {
@@ -94,6 +95,9 @@ void print(int from, int to) {
 char **dump_backup(int from, int to) {
     char **bkp;
     //printf("from: %d\tTo: %d\n", from, to);
+    if(to>current_size){
+        to=current_size;
+    }
     bkp = malloc((to - from) * sizeof(char *));
     int j = 0;
     for (int i = from; i < to /*&& i < current_size*/; i++) {
@@ -110,7 +114,7 @@ char **dump_backup(int from, int to) {
 
 /*Ad una modifica o cancellazione salva lo stato delle righe intaccate
  * dall'operazione all'interno dell'apposita struttura dati per l'undo*/
-void save_backup_undo(char **bkp, char cmd, int from, int to) {
+void save_backup_undo(char **bkp, char cmd, int from, int to, int oldsize) {
     //printf("Salvataggio:\n");
     //printf("operazione:\t");
     /*if (current_size == 0) {
@@ -123,6 +127,7 @@ void save_backup_undo(char **bkp, char cmd, int from, int to) {
     new_stat->to = to;
     new_stat->event = cmd;
     new_stat->bkp = bkp;
+    new_stat->content_length = oldsize;
     undo_size++;
     undo_stack = new_stat;
     //printf("Old status from row %d to row %d\n", from, to);
@@ -150,35 +155,25 @@ void shifta(int from, int new_size, int old_size) {
 void restore_backup(stack *stato) {
     int old_size = current_size;
     //printf("to: %d\tsize: %d\n", stato->to, current_size);
-    bool continua = true;
     if (stato->to > current_size) {
 
         if (stato->event == 'd') {
             current_size = stato->to + old_size - stato->from;
-            if(testo = realloc(testo, current_size * sizeof(char *))==NULL){
-                continua = false;
-                current_size = old_size;
-            }
+            testo = realloc(testo, current_size * sizeof(char *));
             shifta(stato->from, current_size, old_size);
         }else{
-            if(testo = realloc(testo, stato->to * sizeof(char *))==NULL){
-                continua = false;
-                current_size = old_size;
-            }
+            testo = realloc(testo, stato->to * sizeof(char *));
             current_size = stato->to;
         }
         //printf("old size: %d\tNew size: %d\n", old_size, current_size);
     } else if (stato->event == 'd') {
         current_size += stato->to - stato->from;
-        if(testo = realloc(testo, current_size * sizeof(char *))==NULL){
-            continua = false;
-            current_size = old_size;
-        }
+        testo = realloc(testo, current_size * sizeof(char *));
         shifta(stato->from, current_size, old_size);
     }
     int j = 0;
     int vuote = 0;
-    for (int i = stato->from; i < stato->to && firstalloc; i++) {
+    for (int i = stato->from; i < stato->content_length; i++) {
         /*Se non va fare strcpy*/
         if (stato->bkp[j] == NULL) {
             vuote++;
@@ -192,23 +187,19 @@ void restore_backup(stack *stato) {
     current_size -= vuote;
     free_stack(stato);
     undo_size--;
-    if(testo = realloc(testo, current_size * sizeof(char *))==NULL){
-        current_size = old_size;
-    }
-    if(!firstalloc){
-        current_size = 0;
-    }
+    testo = realloc(testo, current_size * sizeof(char *));
 }
 
 /*Quando viene chiamato undo salva lo stato delle righe intaccate
  * dall'operazione all'interno dell'apposita struttura dati per il redo*/
-void save_backup_redo(int from, int to, char cmd) {
+void save_backup_redo(int from, int to, char cmd, int oldsize) {
     stack *new_stat = malloc(sizeof(stack));
     new_stat->prew = redo_stack;
     new_stat->from = from;
     new_stat->to = to;
     new_stat->event = cmd;
     new_stat->bkp = dump_backup(from, to);
+    new_stat->content_length = oldsize;
     redo_size++;
     redo_stack = new_stat;
 }
@@ -222,7 +213,7 @@ void undo(int steps) {
     stack *s = undo_stack;
     stack *s2;
     for (int i = 0; /*s != NULL*/ undo_size > 0 && i < steps; i++) {
-        save_backup_redo(s->from, s->to, s->event);
+        save_backup_redo(s->from, s->to, s->event, current_size);
         s2 = s->prew;
         restore_backup(s);
         s = s2;
@@ -252,10 +243,12 @@ void delete(int from, int to, bool manual) {
         empty_redo_stack();
     }
 
+    int oldsize = current_size;
+
     char **bkp;
     if (from > current_size && manual) {
         bkp = dump_backup(from - 1, to);
-        save_backup_undo(bkp, 'd', from - 1, to);
+        save_backup_undo(bkp, 'd', from - 1, to, current_size);
         return;
     }
     from--;
@@ -277,7 +270,7 @@ void delete(int from, int to, bool manual) {
 
     }
     if (manual)
-        save_backup_undo(bkp, 'd', from, to);
+        save_backup_undo(bkp, 'd', from, to, oldsize);
     testo = realloc(testo, current_size * sizeof(char *));
 }
 
@@ -292,9 +285,9 @@ void change(int from, int to, bool manual, char **autoins) {
     if (manual) {
         empty_redo_stack();
     }
+    int oldsize = current_size;
     char **bkp;
     from--;
-    int oldsize;
     if (to > current_size) {
         oldsize = current_size;
         /*RESTORE*/
@@ -324,7 +317,7 @@ void change(int from, int to, bool manual, char **autoins) {
     }
     int j = 0;
     for (int i = from; i <= to; i++, j++) {
-        char c[1024];
+//        char c[1024];
         if (manual) {
             fgets(c, 1024, stdin);
         } else {
@@ -336,13 +329,12 @@ void change(int from, int to, bool manual, char **autoins) {
         } else {
             int length = strlen(c) + 1;
             testo[i] = malloc(length * sizeof(char));
-            firstalloc = true;
             strcpy(testo[i], c);
         }
     }
     /*RESTORE*/
     if (manual)
-        save_backup_undo(bkp, 'c', from, to);
+        save_backup_undo(bkp, 'c', from, to, oldsize);
 
 }
 
@@ -354,7 +346,7 @@ void redo(int steps) {
         char **bkp = dump_backup(s->from, s->to);
         /*Maybe se event è delete nella redo non è necessario salvare lo stato successivo
          * Anche perchè non esiste, per ora occupo memoria senza usarla per semplicità*/
-        save_backup_undo(bkp, s->event, s->from, s->to);
+        save_backup_undo(bkp, s->event, s->from, s->to, current_size);
         switch (s->event) {
             case 'd':
                 delete(s->from + 1, s->to, false);
