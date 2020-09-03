@@ -152,10 +152,12 @@ void restore_backup(stack *stato) {
     if (stato->to > current_size) {
 
         if (stato->event == 'd') {
-            current_size = stato->to + old_size - stato->from;
-            testo = realloc(testo, current_size * sizeof(char *));
-            shifta(stato->from, current_size, old_size);
-        }else{
+            if(!(stato->from>current_size)){
+                current_size = stato->to + old_size - stato->from;
+                testo = realloc(testo, current_size * sizeof(char *));
+                shifta(stato->from, current_size, old_size);
+            }
+        } else {
             testo = realloc(testo, stato->to * sizeof(char *));
             current_size = stato->to;
         }
@@ -181,6 +183,7 @@ void restore_backup(stack *stato) {
     current_size -= vuote;
     free_stack(stato);
     undo_size--;
+    printf("New size: %d\n", current_size);
     testo = realloc(testo, current_size * sizeof(char *));
 }
 
