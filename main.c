@@ -21,6 +21,7 @@ stack *undo_stack = NULL;
 stack *redo_stack = NULL;
 char *token = NULL, input[20];
 char c[1024];
+bool changed = false;
 
 void free_stack(stack *s) {
     /*for (int i = 0; i < s->to - s->from; i++) {
@@ -210,6 +211,9 @@ void save_backup_redo(int from, int to, char cmd, int oldsize) {
  * - modifica le righe interessate come descritto nell'elemento della stack undo
  * - per più undo consecutivi passa allo stato precedente*/
 void undo(int steps) {
+    if(!changed){
+        return;
+    }
     stack *s = undo_stack;
     stack *s2;
     for (int i = 0; /*s != NULL*/ undo_size > 0 && i < steps; i++) {
@@ -239,6 +243,9 @@ void compress(int empty) {
  * - save_backup per salvare lo stato prima della cancellazione*/
 void delete(int from, int to, bool manual) {
     //printf("%d > %d\n", from, current_size);
+    if(!changed){
+        return;
+    }
     if (manual) {
         empty_redo_stack();
     }
@@ -284,6 +291,7 @@ void delete(int from, int to, bool manual) {
 void change(int from, int to, bool manual, char **autoins) {
     if (manual) {
         empty_redo_stack();
+        changed = true;
     }
     int oldsize = current_size;
     char **bkp;
@@ -339,6 +347,9 @@ void change(int from, int to, bool manual, char **autoins) {
 }
 
 void redo(int steps) {
+    if(!changed){
+        return;
+    }
     stack *s = redo_stack;
     stack *s2;
     for (int i = 0; s != NULL && i < steps && redo_size > 0; i++) {
