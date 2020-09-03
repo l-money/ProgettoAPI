@@ -61,7 +61,7 @@ void print_stack(stack *toPrint) {
             if (toPrint->bkp[i] == NULL) {
                 printf(".\n");
             } else {
-                printf("%s", toPrint->bkp[i]);
+                printf("%s\n", toPrint->bkp[i]);
             }
         }
         toPrint = toPrint->prew;
@@ -157,15 +157,8 @@ void restore_backup(stack *stato) {
     int old_size = current_size;
     //printf("to: %d\tsize: %d\n", stato->to, current_size);
     if (stato->to > current_size) {
-
-        if (stato->event == 'd') {
-            current_size = stato->to + old_size - stato->from;
-            testo = realloc(testo, current_size * sizeof(char *));
-            shifta(stato->from, current_size, old_size);
-        }else{
-            testo = realloc(testo, stato->to * sizeof(char *));
-            current_size = stato->to;
-        }
+        testo = realloc(testo, stato->to * sizeof(char *));
+        current_size = stato->to;
         //printf("old size: %d\tNew size: %d\n", old_size, current_size);
     } else if (stato->event == 'd') {
         current_size += stato->to - stato->from;
