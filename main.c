@@ -18,7 +18,8 @@ int undo_size = 0;
 int redo_size = 0;
 stack *undo_stack = NULL;
 stack *redo_stack = NULL;
-char *token = NULL, *input;
+char *token = NULL, input[20];
+int undo_counter = 0;
 
 void free_stack(stack *s) {
     /*for (int i = 0; i < s->to - s->from; i++) {
@@ -342,13 +343,9 @@ void change(int from, int to, bool manual, char **autoins) {
     }
     int j = 0;
     for (int i = from; i <= to; i++, j++) {
-        char* c;
-        size_t bufsize = 1024;
-        size_t characters;
+        char c[1024];
         if (manual) {
-            //fgets(c, 1024, stdin);
-            c = (char *)malloc(bufsize * sizeof(char));
-            characters = getline(&c,&bufsize,stdin);
+            fgets(c, 1024, stdin);
         } else {
             testo[i] = autoins[j];
             continue;
@@ -359,7 +356,6 @@ void change(int from, int to, bool manual, char **autoins) {
             int length = strlen(c) + 1;
             testo[i] = malloc(length * sizeof(char));
             strcpy(testo[i], c);
-            free(c);
         }
     }
     /*RESTORE*/
@@ -393,6 +389,36 @@ void redo(int steps) {
     redo_stack = s;
 }
 
+void exec_undo_redo() {
+    //printf("counter: %d\n", undo_counter);
+    if (undo_counter == 0) {
+        return;
+    } else if (undo_counter < 0) {
+        redo((-1) * undo_counter);
+    } else {
+        undo(undo_counter);
+    }
+    undo_counter = 0;
+}
+
+void increase_undo(int n) {
+    if ((undo_counter + n) > undo_size) {
+        undo_counter = undo_size;
+    } else {
+        undo_counter += n;
+    }
+    //printf("counter: %d\n", undo_counter);
+}
+
+void increase_redo(int n) {
+    if (undo_counter - n > ((-1) * redo_size)) {
+        undo_counter -= n;
+    } else {
+        undo_counter = (-1) * redo_size;
+    }
+    //printf("counter: %d\n", undo_counter);
+}
+
 /*Interpreta i comandi dell'utente
  * nei formati
  * - 5c
@@ -415,19 +441,22 @@ bool interpreta(char *input) {
     //printf("From: %d\tTo: %d\tCmd: %c\n", from, to, cmd);
     switch (cmd) {
         case 'c':
+            exec_undo_redo();
             change(from, to, true, NULL);
             break;
         case 'p':
+            exec_undo_redo();
             print(from, to);
             break;
         case 'd':
+            exec_undo_redo();
             delete(from, to, true);
             break;
         case 'u':
-            undo(from);
+            increase_undo(from);
             break;
         case 'r':
-            redo(from);
+            increase_redo(from);
             break;
         default:
             return false;
@@ -437,26 +466,21 @@ bool interpreta(char *input) {
 
 int main() {
     while (true) {
-        //fgets(input, 20, stdin);
-        size_t bufsize = 32;
-        size_t characters;
-        input = (char *)malloc(bufsize * sizeof(char));
-        characters = getline(&input,&bufsize,stdin);
+        fgets(input, 20, stdin);
         //printf("%s\n", input);
         if (input[0] == 'q') {
             break;
-        /*} else if (input[0] == 's') {
+        } else if (input[0] == 's') {
             printf("Size: %d\n", undo_size);
             print_stack(undo_stack);
         } else if (input[0] == 'w') {
             printf("Size: %d\n", redo_size);
             print_stack(redo_stack);
         } else if (input[0] == 't') {
-            printf("Text size: %d\n", current_size);*/
+            printf("Text size: %d\n", current_size);
         } else {
             interpreta(input);
         }
-        free(input);
     }
     return 0;
 }
