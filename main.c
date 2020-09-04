@@ -34,7 +34,7 @@ void empty_redo_stack() {
     stack *s;
     while (redo_stack != NULL) {
         s = redo_stack->prew;
-        for (int i = 0; i < (redo_stack->to - redo_stack->from) && redo_stack->bkp != NULL; i++) {
+        for (int i = 0; i < (redo_stack->to - redo_stack->from) && redo_stack->bkp!=NULL; i++) {
             if (redo_stack->bkp[i] != NULL) {
                 //printf("%s", redo_stack->bkp[i]);
                 free(redo_stack->bkp[i]);
@@ -208,9 +208,9 @@ void save_backup_redo(int from, int to, char cmd) {
     new_stat->from = from;
     new_stat->to = to;
     new_stat->event = cmd;
-    if (cmd != 'd') {
+    if(cmd!='d') {
         new_stat->bkp = dump_backup(from, to);
-    } else {
+    }else{
         new_stat->bkp = NULL;
     }
     redo_size++;
@@ -242,7 +242,7 @@ void undo(int steps) {
 /*Data la riga vuota (empty) shifta tutte le righe
  * successive in alto di 1 posizione per coprirla*/
 void compress(int empty) {
-    for (int i = empty; i < (current_size - 1); i++) {
+    for (int i = empty; i < (current_size-1); i++) {
         testo[i] = testo[i + 1];
         testo[i + 1] = NULL;
     }
@@ -275,22 +275,22 @@ void delete(int from, int to, bool manual) {
     if (manual && current_size > 0)
         bkp = dump_backup(from, oldto);
 
-    /*int oldsize = current_size;
+    int oldsize = current_size;
     current_size = to;
     int k = from;
     for (int i = to; i < oldsize && k < current_size; i++, k++) {
         testo[j] = testo[i];
         testo[i] = NULL;
-    }*/
-    for (int i = from; i < to; i++, j++) {
+    }
+    /*for (int i = from; i < to; i++, j++) {
         //printf("riga: %d\tbkp: %d\n", i, j);
-        bkp[j] = malloc(1024 * sizeof(char));
-        strcpy(bkp[j], testo[from]);
+        *//*bkp[j] = malloc(1024 * sizeof(char));
+        strcpy(bkp[j], testo[from]);*//*
         compress(from);
         testo[current_size - 1] = NULL; //FREE?
         current_size--;
 
-    }
+    }*/
     if (manual)
         save_backup_undo(bkp, 'd', from, to);
     testo = realloc(testo, current_size * sizeof(char *));
