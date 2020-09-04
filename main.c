@@ -18,13 +18,10 @@ int undo_size = 0;
 int redo_size = 0;
 stack *undo_stack = NULL;
 stack *redo_stack = NULL;
-char *token = NULL, *input;
+char *token = NULL, input[20];
 int undo_counter = 0;
 
 void free_stack(stack *s) {
-    /*for (int i = 0; i < s->to - s->from; i++) {
-        free(s->bkp[i]);
-    }*/
     free(s->bkp);
     free(s);
 }
@@ -36,11 +33,9 @@ void empty_redo_stack() {
         s = redo_stack->prew;
         for (int i = 0; i < (redo_stack->to - redo_stack->from) && redo_stack->bkp != NULL; i++) {
             if (redo_stack->bkp[i] != NULL) {
-                //printf("%s", redo_stack->bkp[i]);
                 free(redo_stack->bkp[i]);
             }
         }
-        //printf("------------------\n");
         free(redo_stack->bkp);
         free(redo_stack);
         redo_stack = s;
@@ -78,7 +73,6 @@ void print_stack(stack *toPrint) {
 void print(int from, int to) {
     from--;
     to--;
-    //printf("from %d\tto %d\tsize %d\n", from, to, current_size);
     if (testo == NULL) {
         for (int i = from; i <= to; i++) {
             //printf(".\n");
@@ -88,12 +82,9 @@ void print(int from, int to) {
     }
     for (int i = from; i <= to; i++) {
         if (i >= current_size || i < 0 || testo[i] == NULL) {
-            //printf(".\n");
             fputs(".\n", stdout);
         } else {
-            //printf("%s", testo[i]);
             fputs(testo[i], stdout);
-            //printf("%d\n", i);
         }
     }
 }
@@ -103,7 +94,6 @@ void print(int from, int to) {
  * viene chiamato da delete, change, undo e redo*/
 char **dump_backup(int from, int to) {
     char **bkp;
-    //printf("from: %d\tTo: %d\n", from, to);
     bkp = malloc((to - from) * sizeof(char *));
     int j = 0;
     for (int i = from; i < to /*&& i < current_size*/; i++) {
@@ -121,12 +111,7 @@ char **dump_backup(int from, int to) {
 /*Ad una modifica o cancellazione salva lo stato delle righe intaccate
  * dall'operazione all'interno dell'apposita struttura dati per l'undo*/
 void save_backup_undo(char **bkp, char cmd, int from, int to) {
-    //printf("Salvataggio:\n");
-    //printf("operazione:\t");
-    /*if (current_size == 0) {
-        from = 0;
-        to = 0;
-    }*/
+
     stack *new_stat = malloc(sizeof(stack));
     new_stat->prew = undo_stack;
     new_stat->from = from;
@@ -135,12 +120,7 @@ void save_backup_undo(char **bkp, char cmd, int from, int to) {
     new_stat->bkp = bkp;
     undo_size++;
     undo_stack = new_stat;
-    //printf("Old status from row %d to row %d\n", from, to);
-    /*for (int i = 0; i < (to - from); i++) {
-        printf("%d  %s\n", from+i, bkp[i]);
-    }*/
-    /*Da togliere*/
-    //free(bkp);
+
 }
 
 /*In caso di restore da un'operazione di delete è necessario
@@ -150,7 +130,6 @@ void shifta(int from, int new_size, int old_size) {
     old_size--;
     new_size--;
     for (int i = 0; old_size - i >= from; i++) {
-        /*strcpy(testo[new_size - i], testo[old_size - i]);*/
         testo[new_size - i] = testo[old_size - i];
     }
 }
@@ -159,7 +138,6 @@ void shifta(int from, int new_size, int old_size) {
  * fornito come argomento*/
 void restore_backup(stack *stato) {
     int old_size = current_size;
-    //printf("to: %d\tsize: %d\n", stato->to, current_size);
     if (stato->to > current_size) {
 
         if (stato->event == 'd') {
@@ -178,7 +156,6 @@ void restore_backup(stack *stato) {
             testo = realloc(testo, stato->to * sizeof(char *));
             current_size = stato->to;
         }
-        //printf("old size: %d\tNew size: %d\n", old_size, current_size);
     } else if (stato->event == 'd') {
         current_size += stato->to - stato->from;
         testo = realloc(testo, current_size * sizeof(char *));
@@ -192,7 +169,6 @@ void restore_backup(stack *stato) {
             vuote++;
             testo[i] = NULL;
         } else {
-            //printf("%s\t<-%s\n", testo[i], stato->bkp[j]);
             testo[i] = stato->bkp[j];
         }
         j++;
@@ -233,9 +209,6 @@ void undo(int steps) {
         s2 = s->prew;
         restore_backup(s);
         s = s2;
-        /*if (current_size == 0) {
-            break;
-        }*/
 
     }
     undo_stack = s;
@@ -286,15 +259,6 @@ void delete(int from, int to, bool manual) {
     }
     current_size = from + (current_size - to);
 
-    /*for (int i = from; i < to; i++, j++) {
-        //printf("riga: %d\tbkp: %d\n", i, j);
-        *//*bkp[j] = malloc(1024 * sizeof(char));
-        strcpy(bkp[j], testo[from]);*//*
-        compress(from);
-        testo[current_size - 1] = NULL; //FREE?
-        current_size--;
-
-    }*/
     if (manual)
         save_backup_undo(bkp, 'd', from, to);
     testo = realloc(testo, current_size * sizeof(char *));
@@ -312,8 +276,6 @@ void change(int from, int to, bool manual, char **autoins) {
         empty_redo_stack();
     }
     char **bkp;
-    size_t bufsize = 1024;
-    size_t characters;
     from--;
     int oldsize;
     if (to > current_size) {
@@ -337,19 +299,14 @@ void change(int from, int to, bool manual, char **autoins) {
             bkp = dump_backup(from, to);
 
     }
-    if (manual) {
-        //char f[10];
-        //fgets(f, 10, stdin);
-    } else {
+    if (!manual) {
         to--;
     }
     int j = 0;
     for (int i = from; i <= to; i++, j++) {
-        char* c;
-        c = (char *)malloc(bufsize * sizeof(char));
+        char c[1024];
         if (manual) {
-            //fgets(c, 1024, stdin);
-            characters = getline(&c,&bufsize,stdin);
+            fgets(c, 1024, stdin);
         } else {
             testo[i] = autoins[j];
             continue;
@@ -361,7 +318,6 @@ void change(int from, int to, bool manual, char **autoins) {
             testo[i] = malloc(length * sizeof(char));
             strcpy(testo[i], c);
         }
-        free(c);
     }
     /*RESTORE*/
     if (manual)
@@ -395,7 +351,6 @@ void redo(int steps) {
 }
 
 void exec_undo_redo() {
-    //printf("counter: %d\n", undo_counter);
     if (undo_counter == 0) {
         return;
     } else if (undo_counter < 0) {
@@ -412,7 +367,6 @@ void increase_undo(int n) {
     } else {
         undo_counter += n;
     }
-    //printf("counter: %d\n", undo_counter);
 }
 
 void increase_redo(int n) {
@@ -421,7 +375,6 @@ void increase_redo(int n) {
     } else {
         undo_counter = (-1) * redo_size;
     }
-    //printf("counter: %d\n", undo_counter);
 }
 
 /*Interpreta i comandi dell'utente
@@ -433,17 +386,14 @@ bool interpreta(char *input) {
     int length = (int) strlen(input);
     char cmd;
     cmd = input[length - 2];
-    //printf("cmd: %c\n", cmd);
     input[length - 2] = '\0';
     token = strtok(input, ",");
     int from = atoi(token);
-    //printf("from: %d\n", from);
     int to;
     token = strtok(NULL, ",");
     if (token != NULL) {
         to = atoi(token);
     }
-    //printf("From: %d\tTo: %d\tCmd: %c\n", from, to, cmd);
     switch (cmd) {
         case 'c':
             exec_undo_redo();
@@ -471,26 +421,20 @@ bool interpreta(char *input) {
 
 int main() {
     while (true) {
-        //fgets(input, 20, stdin);
-        size_t bufsize = 32;
-        size_t characters;
-        input = (char *)malloc(bufsize * sizeof(char));
-        characters = getline(&input,&bufsize,stdin);
-        //printf("%s\n", input);
+        fgets(input, 20, stdin);
         if (input[0] == 'q') {
             break;
-        /*} else if (input[0] == 's') {
+        } else if (input[0] == 's') {
             printf("Size: %d\n", undo_size);
             print_stack(undo_stack);
         } else if (input[0] == 'w') {
             printf("Size: %d\n", redo_size);
             print_stack(redo_stack);
         } else if (input[0] == 't') {
-            printf("Text size: %d\n", current_size);*/
+            printf("Text size: %d\n", current_size);
         } else {
             interpreta(input);
         }
-        free(input);
     }
     return 0;
 }
