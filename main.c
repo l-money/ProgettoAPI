@@ -18,7 +18,7 @@ int undo_size = 0;
 int redo_size = 0;
 stack *undo_stack = NULL;
 stack *redo_stack = NULL;
-char *token = NULL, input[20];
+char *token = NULL, *input;
 int undo_counter = 0;
 
 void free_stack(stack *s) {
@@ -312,6 +312,8 @@ void change(int from, int to, bool manual, char **autoins) {
         empty_redo_stack();
     }
     char **bkp;
+    size_t bufsize = 1024;
+    size_t characters;
     from--;
     int oldsize;
     if (to > current_size) {
@@ -343,9 +345,11 @@ void change(int from, int to, bool manual, char **autoins) {
     }
     int j = 0;
     for (int i = from; i <= to; i++, j++) {
-        char c[1024];
+        char* c;
+        c = (char *)malloc(bufsize * sizeof(char));
         if (manual) {
-            fgets(c, 1024, stdin);
+            //fgets(c, 1024, stdin);
+            characters = getline(&c,&bufsize,stdin);
         } else {
             testo[i] = autoins[j];
             continue;
@@ -357,6 +361,7 @@ void change(int from, int to, bool manual, char **autoins) {
             testo[i] = malloc(length * sizeof(char));
             strcpy(testo[i], c);
         }
+        free(c);
     }
     /*RESTORE*/
     if (manual)
@@ -466,21 +471,26 @@ bool interpreta(char *input) {
 
 int main() {
     while (true) {
-        fgets(input, 20, stdin);
+        //fgets(input, 20, stdin);
+        size_t bufsize = 32;
+        size_t characters;
+        input = (char *)malloc(bufsize * sizeof(char));
+        characters = getline(&input,&bufsize,stdin);
         //printf("%s\n", input);
         if (input[0] == 'q') {
             break;
-        } else if (input[0] == 's') {
+        /*} else if (input[0] == 's') {
             printf("Size: %d\n", undo_size);
             print_stack(undo_stack);
         } else if (input[0] == 'w') {
             printf("Size: %d\n", redo_size);
             print_stack(redo_stack);
         } else if (input[0] == 't') {
-            printf("Text size: %d\n", current_size);
+            printf("Text size: %d\n", current_size);*/
         } else {
             interpreta(input);
         }
+        free(input);
     }
     return 0;
 }
