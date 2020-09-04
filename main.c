@@ -80,15 +80,18 @@ void print(int from, int to) {
     //printf("from %d\tto %d\tsize %d\n", from, to, current_size);
     if (testo == NULL) {
         for (int i = from; i <= to; i++) {
-            printf(".\n");
+            //printf(".\n");
+            fputs(".\n", stdout);
         }
         return;
     }
     for (int i = from; i <= to; i++) {
         if (i >= current_size || i < 0 || testo[i] == NULL) {
-            printf(".\n");
+            //printf(".\n");
+            fputs(".\n", stdout);
         } else {
-            printf("%s", testo[i]);
+            //printf("%s", testo[i]);
+            fputs(testo[i], stdout);
             //printf("%d\n", i);
         }
     }
