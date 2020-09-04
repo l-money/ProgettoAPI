@@ -19,6 +19,7 @@ int redo_size = 0;
 stack *undo_stack = NULL;
 stack *redo_stack = NULL;
 char *token = NULL, input[20];
+int undo_counter = 0;
 
 void free_stack(stack *s) {
     /*for (int i = 0; i < s->to - s->from; i++) {
@@ -379,6 +380,41 @@ void redo(int steps) {
     redo_stack = s;
 }
 
+/*Faccio 2 metodi di store per essere in grado di calcolare
+ * la risultante tra le undo e le redo messe in cascata
+ * dovrebbe diminuire sensibilmente il tempo si esecuzione
+ * in presenza di undo e redo successive*/
+void store_undo(int n) {
+    if((n+undo_counter)>undo_size) {
+        undo_counter += undo_size;
+    }else{
+        undo_counter+=n;
+    }
+}
+
+/*Salvo tutti in una variabile undo_counter
+ * <0 redo pari al valore
+ * >0 undo pari al valore
+ * =0 nulla da eseguire*/
+void store_redo(int n) {
+    if(((-1)*(undo_counter-n))>redo_size){
+        undo_counter = (-1)*redo_size;
+    }else {
+        undo_counter -= n;
+    }
+}
+
+void execute_undo_redo() {
+    if (undo_counter == 0) {
+        return;
+    } else if (undo_counter > 0) {
+        undo(undo_counter);
+    } else {
+        redo((-1)*undo_counter);
+    }
+    undo_counter = 0;
+}
+
 /*Interpreta i comandi dell'utente
  * nei formati
  * - 5c
@@ -401,19 +437,22 @@ bool interpreta(char *input) {
     //printf("From: %d\tTo: %d\tCmd: %c\n", from, to, cmd);
     switch (cmd) {
         case 'c':
+            execute_undo_redo();
             change(from, to, true, NULL);
             break;
         case 'p':
+            execute_undo_redo();
             print(from, to);
             break;
         case 'd':
+            execute_undo_redo();
             delete(from, to, true);
             break;
         case 'u':
-            undo(from);
+            store_undo(from);
             break;
         case 'r':
-            redo(from);
+            store_redo(from);
             break;
         default:
             return false;
