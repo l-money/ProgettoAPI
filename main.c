@@ -33,7 +33,7 @@ void empty_redo_stack() {
     stack *s;
     while (redo_stack != NULL) {
         s = redo_stack->prew;
-        for (int i = 0; i < (redo_stack->to - redo_stack->from) && redo_stack->bkp!=NULL; i++) {
+        for (int i = 0; i < (redo_stack->to - redo_stack->from) && redo_stack->bkp != NULL; i++) {
             if (redo_stack->bkp[i] != NULL) {
                 //printf("%s", redo_stack->bkp[i]);
                 free(redo_stack->bkp[i]);
@@ -80,16 +80,18 @@ void print(int from, int to) {
     //printf("from %d\tto %d\tsize %d\n", from, to, current_size);
     if (testo == NULL) {
         for (int i = from; i <= to; i++) {
-            printf(".\n");
+            //printf(".\n");
+            fputs(".\n", stdout);
         }
         return;
     }
     for (int i = from; i <= to; i++) {
         if (i >= current_size || i < 0 || testo[i] == NULL) {
-            printf(".\n");
+//            printf(".\n");
+            fputs(".\n", stdout);
         } else {
-            printf("%s", testo[i]);
-            //printf("%d\n", i);
+//            printf("%s", testo[i]);
+            fputs(testo[i], stdout);
         }
     }
 }
@@ -207,9 +209,9 @@ void save_backup_redo(int from, int to, char cmd) {
     new_stat->from = from;
     new_stat->to = to;
     new_stat->event = cmd;
-    if(cmd!='d') {
+    if (cmd != 'd') {
         new_stat->bkp = dump_backup(from, to);
-    }else{
+    } else {
         new_stat->bkp = NULL;
     }
     redo_size++;
@@ -241,7 +243,7 @@ void undo(int steps) {
 /*Data la riga vuota (empty) shifta tutte le righe
  * successive in alto di 1 posizione per coprirla*/
 void compress(int empty) {
-    for (int i = empty; i < (current_size-1); i++) {
+    for (int i = empty; i < (current_size - 1); i++) {
         testo[i] = testo[i + 1];
         testo[i + 1] = NULL;
     }
@@ -297,7 +299,7 @@ void delete(int from, int to, bool manual) {
  * se non manual inserisce da puntatore*/
 void change(int from, int to, bool manual, char **autoins) {
     if (manual) {
-        empty_redo_stack();
+        empty_redo_stack(); //2
     }
     char **bkp;
     from--;
@@ -306,21 +308,21 @@ void change(int from, int to, bool manual, char **autoins) {
         oldsize = current_size;
         /*RESTORE*/
         if (manual)
-            bkp = dump_backup(from, to); /*WARN current_size*/
+            bkp = dump_backup(from, to); /*WARN current_size  1*/
         int k = current_size;
         testo = realloc(testo, to * sizeof(char *));
         current_size = to;
         /*Serve per far si che il nuovo puntatore riga venga identificato
          * come null (non occupato) dal resto del programma dopo la realloc*/
-        for (; k < current_size; k++) {
+        /*for (; k < current_size; k++) {
             testo[k] = NULL;
-        }
+        }*/
 
     } else {
         /*RESTORE*/
         oldsize = to;
         if (manual)
-            bkp = dump_backup(from, to);
+            bkp = dump_backup(from, to);//1
 
     }
     if (manual) {
@@ -348,7 +350,7 @@ void change(int from, int to, bool manual, char **autoins) {
     }
     /*RESTORE*/
     if (manual)
-        save_backup_undo(bkp, 'c', from, to);
+        save_backup_undo(bkp, 'c', from, to);//3
 
 }
 
@@ -425,7 +427,7 @@ int main() {
         //printf("%s\n", input);
         if (input[0] == 'q') {
             break;
-        } else if (input[0] == 's') {
+        } /*else if (input[0] == 's') {
             printf("Size: %d\n", undo_size);
             print_stack(undo_stack);
         } else if (input[0] == 'w') {
@@ -433,7 +435,7 @@ int main() {
             print_stack(redo_stack);
         } else if (input[0] == 't') {
             printf("Text size: %d\n", current_size);
-        } else {
+        } */else {
             interpreta(input);
         }
     }
