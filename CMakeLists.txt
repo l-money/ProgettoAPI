@@ -7,5 +7,5 @@ add_executable(ProgettoAPI main.c)
 #[[
 set(GCC_COVERAGE_COMPILE_FLAGS "-DEVAL -std=gnu11 -O2 -pipe -static -s -lm")
 ]]
-set(GCC_COVERAGE_COMPILE_FLAGS "-DEVAL -std=gnu11 -O2 -pipe -static -lm")
+set(GCC_COVERAGE_COMPILE_FLAGS "-DEVAL -std=gnu11 -O2 -pipe -lm -g")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")

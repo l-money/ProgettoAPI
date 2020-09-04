@@ -23,8 +23,8 @@ char *token = NULL, input[20];
 void free_stack(stack *s) {
     /*for (int i = 0; i < s->to - s->from; i++) {
         free(s->bkp[i]);
-    }
-    free(s->bkp);*/
+    }*/
+    free(s->bkp);
     free(s);
 }
 
@@ -33,6 +33,13 @@ void empty_redo_stack() {
     stack *s;
     while (redo_stack != NULL) {
         s = redo_stack->prew;
+        for (int i = 0; i < (redo_stack->to - redo_stack->from) && redo_stack->bkp!=NULL; i++) {
+            if (redo_stack->bkp[i] != NULL) {
+                //printf("%s", redo_stack->bkp[i]);
+                free(redo_stack->bkp[i]);
+            }
+        }
+        //printf("------------------\n");
         free(redo_stack->bkp);
         free(redo_stack);
         redo_stack = s;
@@ -200,7 +207,11 @@ void save_backup_redo(int from, int to, char cmd) {
     new_stat->from = from;
     new_stat->to = to;
     new_stat->event = cmd;
-    new_stat->bkp = dump_backup(from, to);
+    if(cmd!='d') {
+        new_stat->bkp = dump_backup(from, to);
+    }else{
+        new_stat->bkp = NULL;
+    }
     redo_size++;
     redo_stack = new_stat;
 }
@@ -230,8 +241,9 @@ void undo(int steps) {
 /*Data la riga vuota (empty) shifta tutte le righe
  * successive in alto di 1 posizione per coprirla*/
 void compress(int empty) {
-    for (int i = empty; i < current_size; i++) {
+    for (int i = empty; i < (current_size-1); i++) {
         testo[i] = testo[i + 1];
+        testo[i + 1] = NULL;
     }
 }
 
